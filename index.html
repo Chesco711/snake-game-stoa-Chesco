@@ -120,6 +120,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      width: 600px;
       width: 100%;
       margin-bottom: 10px;
       padding: 0 2px;
@@ -264,12 +265,12 @@
   </div>
 
   <h1>Snake</h1>
-  <div id="user-bar">
-    <span>Playing as <strong id="username-display"></strong></span>
-    <button id="logout-btn">Logout</button>
-  </div>
   <div id="columns">
     <div id="game-col">
+      <div id="user-bar">
+        <span>Playing as <strong id="username-display"></strong></span>
+        <button id="logout-btn">Logout</button>
+      </div>
       <div id="score-display">Score: <span id="score-val">0</span></div>
       <canvas id="c" width="600" height="600"></canvas>
       <div id="hint">Arrow keys to move</div>
