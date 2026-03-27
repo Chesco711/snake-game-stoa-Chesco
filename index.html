@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Snake</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -33,20 +34,131 @@
       text-transform: uppercase;
       color: #39ff14;
       text-shadow: 0 0 12px #39ff1488;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Auth Modal ── */
+    #auth-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    #auth-modal.hidden { display: none; }
+
+    #auth-box {
+      background: #1a1a2e;
+      border: 1px solid #39ff1444;
+      border-radius: 12px;
+      padding: 36px 40px;
+      width: 340px;
+      box-shadow: 0 0 40px #39ff1422;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    #auth-box h2 {
+      text-align: center;
+      font-size: 1.4rem;
+      color: #39ff14;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 8px #39ff1466;
+    }
+
+    #auth-box input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #auth-box input:focus { border-color: #39ff1488; }
+
+    #auth-submit {
+      padding: 11px;
+      background: #39ff14;
+      color: #111;
+      font-weight: bold;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 12px #39ff1466;
+    }
+    #auth-submit:hover { opacity: 0.9; box-shadow: 0 0 20px #39ff1488; }
+    #auth-submit:disabled { opacity: 0.5; cursor: default; }
+
+    #auth-toggle {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #888;
+    }
+    #auth-toggle span {
+      color: #39ff14;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    #auth-error {
+      color: #ff4136;
+      font-size: 0.85rem;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    /* ── Main Layout ── */
+    #user-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+
+    #user-bar span { font-size: 0.9rem; color: #aaa; }
+    #user-bar strong { color: #39ff14; }
+
+    #logout-btn {
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #logout-btn:hover { color: #fff; border-color: #666; }
+
+    #columns {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    #game-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
 
     #score-display {
       font-size: 1.1rem;
       color: #aaa;
-      margin-bottom: 12px;
       letter-spacing: 0.08em;
     }
-
-    #score-display span {
-      color: #fff;
-      font-weight: bold;
-    }
+    #score-display span { color: #fff; font-weight: bold; }
 
     canvas {
       display: block;
@@ -56,38 +168,349 @@
     }
 
     #hint {
-      margin-top: 14px;
       font-size: 0.8rem;
       color: #444;
       letter-spacing: 0.06em;
     }
+
+    /* ── Leaderboard Panel ── */
+    #lb-panel {
+      width: 200px;
+      background: #0d0d1a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 0 20px rgba(57,255,20,0.05);
+    }
+
+    #lb-panel h3 {
+      text-align: center;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #39ff14;
+      text-shadow: 0 0 8px #39ff1455;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #1e1e2e;
+    }
+
+    #leaderboard-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #leaderboard-list li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      padding: 5px 6px;
+      border-radius: 4px;
+    }
+
+    #leaderboard-list li.me {
+      background: #39ff1415;
+      border: 1px solid #39ff1433;
+    }
+
+    .lb-rank {
+      color: #555;
+      font-size: 0.7rem;
+      width: 14px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    li.me .lb-rank { color: #39ff1488; }
+
+    .lb-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #ccc;
+    }
+    li.me .lb-name { color: #39ff14; }
+
+    .lb-score {
+      color: #fff;
+      font-weight: bold;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+
+    #lb-status {
+      text-align: center;
+      color: #444;
+      font-size: 0.8rem;
+      padding: 10px 0;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal">
+    <div id="auth-box">
+      <h2 id="auth-title">Sign Up</h2>
+      <input id="auth-username" type="text" placeholder="Username" maxlength="20" autocomplete="off" />
+      <input id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="off" />
+      <div id="auth-error"></div>
+      <button id="auth-submit">Sign Up</button>
+      <div id="auth-toggle">Already have an account? <span id="auth-toggle-link">Log in</span></div>
+    </div>
+  </div>
+
   <h1>Snake</h1>
-  <div id="score-display">Score: <span id="score-val">0</span></div>
-  <canvas id="c" width="600" height="600"></canvas>
-  <div id="hint">Arrow keys to move</div>
+  <div id="user-bar">
+    <span>Playing as <strong id="username-display"></strong></span>
+    <button id="logout-btn">Logout</button>
+  </div>
+  <div id="columns">
+    <div id="game-col">
+      <div id="score-display">Score: <span id="score-val">0</span></div>
+      <canvas id="c" width="600" height="600"></canvas>
+      <div id="hint">Arrow keys to move</div>
+    </div>
+    <div id="lb-panel">
+      <h3>Leaderboard</h3>
+      <ul id="leaderboard-list">
+        <li id="lb-status">Loading…</li>
+      </ul>
+    </div>
+  </div>
 
   <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
+    // ── Supabase ──────────────────────────────────────────────
+    const SUPABASE_URL = 'https://nsvienlugithpmehukjt.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_nyCIqLLTzWN7_im_rdFhVw_QHdgkdtw';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+
+    // ── Auth UI ───────────────────────────────────────────────
+    const authModal    = document.getElementById('auth-modal');
+    const authTitle    = document.getElementById('auth-title');
+    const authUsername = document.getElementById('auth-username');
+    const authPassword = document.getElementById('auth-password');
+    const authError    = document.getElementById('auth-error');
+    const authSubmit   = document.getElementById('auth-submit');
+
+    let authMode = 'signup';
+
+    function setupToggle() {
+      const link = document.getElementById('auth-toggle-link');
+      const wrap = document.getElementById('auth-toggle');
+      link.onclick = () => {
+        authMode = authMode === 'signup' ? 'login' : 'signup';
+        const isSignup = authMode === 'signup';
+        authTitle.textContent  = isSignup ? 'Sign Up' : 'Log In';
+        authSubmit.textContent = isSignup ? 'Sign Up' : 'Log In';
+        wrap.innerHTML = isSignup
+          ? 'Already have an account? <span id="auth-toggle-link">Log in</span>'
+          : 'No account? <span id="auth-toggle-link">Sign up</span>';
+        authError.textContent = '';
+        setupToggle();
+      };
+    }
+    setupToggle();
+
+    authSubmit.addEventListener('click', submitAuth);
+    authPassword.addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); });
+
+    async function submitAuth() {
+      const username = authUsername.value.trim();
+      const password = authPassword.value;
+
+      if (!username) { authError.textContent = 'Please enter a username.'; return; }
+      if (!/^[a-zA-Z0-9_]{1,20}$/.test(username)) {
+        authError.textContent = 'Letters, numbers, underscores only.'; return;
+      }
+      if (password.length < 6) { authError.textContent = 'Password must be at least 6 characters.'; return; }
+
+      authSubmit.disabled    = true;
+      authSubmit.textContent = authMode === 'signup' ? 'Signing up…' : 'Logging in…';
+      authError.textContent  = '';
+
+      const email = `${username.toLowerCase()}@snake.local`;
+      const result = authMode === 'signup'
+        ? await sb.auth.signUp({ email, password, options: { data: { username } } })
+        : await sb.auth.signInWithPassword({ email, password });
+
+      const { data, error } = result;
+
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('already registered') || msg.includes('already been registered')) {
+          authError.textContent = 'Username already taken.';
+        } else if (msg.includes('Invalid login') || msg.includes('invalid_credentials') || msg.includes('Invalid email or password')) {
+          authError.textContent = 'Invalid username or password.';
+        } else {
+          authError.textContent = msg;
+        }
+        authSubmit.disabled    = false;
+        authSubmit.textContent = authMode === 'signup' ? 'Sign Up' : 'Log In';
+        return;
+      }
+
+      currentUser = {
+        id:       data.user.id,
+        username: data.user.user_metadata?.username || username,
+      };
+      showGame();
+    }
+
+    function showGame() {
+      authModal.classList.add('hidden');
+      document.getElementById('username-display').textContent = currentUser.username;
+      fetchLeaderboard();
+      init();
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      clearInterval(gameLoop);
+      cancelAnimationFrame(bgRaf);
+      await sb.auth.signOut();
+      currentUser = null;
+      // Reset auth modal
+      authMode               = 'signup';
+      authTitle.textContent  = 'Sign Up';
+      authSubmit.textContent = 'Sign Up';
+      authSubmit.disabled    = false;
+      authUsername.value     = '';
+      authPassword.value     = '';
+      authError.textContent  = '';
+      document.getElementById('auth-toggle').innerHTML =
+        'Already have an account? <span id="auth-toggle-link">Log in</span>';
+      setupToggle();
+      authModal.classList.remove('hidden');
+    });
+
+    // ── Leaderboard ───────────────────────────────────────────
+    async function fetchLeaderboard() {
+      const list = document.getElementById('leaderboard-list');
+      list.innerHTML = '<li id="lb-status">Loading…</li>';
+
+      const { data, error } = await sb
+        .from('leaderboard')
+        .select('username, best_score');
+
+      list.innerHTML = '';
+
+      if (error || !data || data.length === 0) {
+        list.innerHTML = '<li id="lb-status">No scores yet!</li>';
+        return;
+      }
+
+      data.forEach((entry, i) => {
+        const li  = document.createElement('li');
+        const isMe = currentUser && entry.username === currentUser.username;
+        if (isMe) li.classList.add('me');
+        li.innerHTML = `
+          <span class="lb-rank">${i + 1}</span>
+          <span class="lb-name">${escHtml(entry.username)}</span>
+          <span class="lb-score">${entry.best_score}</span>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function submitScore(score) {
+      if (!currentUser) return;
+      const { error } = await sb.from('scores').insert({
+        user_id:  currentUser.id,
+        username: currentUser.username,
+        score,
+      });
+      if (!error) await fetchLeaderboard();
+    }
+
+    function escHtml(str) {
+      return str.replace(/[&<>"']/g, c =>
+        ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])
+      );
+    }
+
+    // ── Session Restore ───────────────────────────────────────
+    async function bootAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        currentUser = {
+          id:       session.user.id,
+          username: session.user.user_metadata?.username || 'Player',
+        };
+        showGame();
+      }
+      // else: modal is visible by default
+    }
+
+    // ── Game ──────────────────────────────────────────────────
+    const canvas  = document.getElementById('c');
+    const ctx     = canvas.getContext('2d');
     const scoreEl = document.getElementById('score-val');
 
     const CELL = 20;
-    const COLS = canvas.width / CELL;
+    const COLS = canvas.width  / CELL;
     const ROWS = canvas.height / CELL;
     const TICK = 130;
 
-    let snake, dir, nextDir, food, score, loop, gameOver;
+    let snake, dir, nextDir, food, score, gameLoop, gameOver;
+    let bgRaf;
 
-    // Animated background RAF loop
+    function init() {
+      snake    = [{ x: 15, y: 15 }, { x: 14, y: 15 }, { x: 13, y: 15 }];
+      dir      = { x: 1, y: 0 };
+      nextDir  = { x: 1, y: 0 };
+      score    = 0;
+      gameOver = false;
+      scoreEl.textContent = '0';
+      spawnFood();
+      clearInterval(gameLoop);
+      gameLoop = setInterval(tick, TICK);
+      startBgLoop();
+    }
+
+    function spawnFood() {
+      let pos;
+      do {
+        pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+      food = pos;
+    }
+
+    function tick() {
+      dir = nextDir;
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) { endGame(); return; }
+      if (snake.some(s => s.x === head.x && s.y === head.y))             { endGame(); return; }
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreEl.textContent = score;
+        spawnFood();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    // ── Rendering ─────────────────────────────────────────────
+    function startBgLoop() {
+      cancelAnimationFrame(bgRaf);
+      (function loop() {
+        if (gameOver) return;
+        drawBackground(); drawGrid(); drawGameObjects();
+        bgRaf = requestAnimationFrame(loop);
+      })();
+    }
+
     function drawBackground() {
-      const t = Date.now() / 4000; // full cycle every ~25s
-      const hue1 = (t * 60) % 360;        // slowly shifts hue
-      const hue2 = (hue1 + 120) % 360;    // complementary
+      const t    = Date.now() / 4000;
+      const hue1 = (t * 60) % 360;
+      const hue2 = (hue1 + 120) % 360;
       const hue3 = (hue1 + 240) % 360;
-
       const grad = ctx.createRadialGradient(
         canvas.width * 0.5, canvas.height * 0.4, 0,
         canvas.width * 0.5, canvas.height * 0.5, canvas.width * 0.8
@@ -95,28 +518,14 @@
       grad.addColorStop(0,   `hsl(${hue1}, 40%, 8%)`);
       grad.addColorStop(0.5, `hsl(${hue2}, 50%, 6%)`);
       grad.addColorStop(1,   `hsl(${hue3}, 60%, 4%)`);
-
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    let bgRaf;
-    function startBgLoop() {
-      cancelAnimationFrame(bgRaf);
-      function loop() {
-        if (gameOver) return; // game draw handles its own overlay
-        drawBackground();
-        drawGrid();
-        drawGameObjects();
-        bgRaf = requestAnimationFrame(loop);
-      }
-      bgRaf = requestAnimationFrame(loop);
-    }
-
     function drawGrid() {
       ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-      ctx.lineWidth = 0.5;
-      for (let x = 0; x <= canvas.width; x += CELL) {
+      ctx.lineWidth   = 0.5;
+      for (let x = 0; x <= canvas.width;  x += CELL) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
       }
       for (let y = 0; y <= canvas.height; y += CELL) {
@@ -126,167 +535,77 @@
 
     function drawGameObjects() {
       if (!food) return;
-
       // Food
-      ctx.shadowColor = '#ff4136';
-      ctx.shadowBlur = 14;
-      ctx.fillStyle = '#ff4136';
+      ctx.shadowColor = '#ff4136'; ctx.shadowBlur = 14; ctx.fillStyle = '#ff4136';
       const fx = food.x * CELL + 2, fy = food.y * CELL + 2, fs = CELL - 4;
-      ctx.beginPath();
-      ctx.arc(fx + fs / 2, fy + fs / 2, fs / 2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(fx + fs / 2, fy + fs / 2, fs / 2, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
-
-      // Snake body
+      // Snake
       snake.forEach((seg, i) => {
         const x = seg.x * CELL + 1, y = seg.y * CELL + 1, s = CELL - 2;
         const isHead = i === 0;
-        if (isHead) {
-          ctx.shadowColor = '#39ff14';
-          ctx.shadowBlur = 16;
-          ctx.fillStyle = '#39ff14';
-        } else {
-          ctx.shadowBlur = 0;
-          const t = i / snake.length;
-          const g = Math.round(200 - t * 90);
-          ctx.fillStyle = `rgb(30, ${g}, 20)`;
-        }
-        ctx.beginPath();
-        ctx.roundRect(x, y, s, s, isHead ? 5 : 3);
-        ctx.fill();
+        if (isHead) { ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 16; ctx.fillStyle = '#39ff14'; }
+        else        { ctx.shadowBlur = 0; ctx.fillStyle = `rgb(30, ${Math.round(200 - (i / snake.length) * 90)}, 20)`; }
+        ctx.beginPath(); ctx.roundRect(x, y, s, s, isHead ? 5 : 3); ctx.fill();
       });
       ctx.shadowBlur = 0;
-
       // Eyes
-      const hx = snake[0].x * CELL, hy = snake[0].y * CELL;
       ctx.fillStyle = '#111';
-      const eyeOffset = 5, eyeR = 2.5;
-      const eyes = getEyePositions(hx, hy, dir, eyeOffset);
-      eyes.forEach(([ex, ey]) => {
-        ctx.beginPath();
-        ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
-        ctx.fill();
+      getEyePositions(snake[0].x * CELL, snake[0].y * CELL, dir, 5).forEach(([ex, ey]) => {
+        ctx.beginPath(); ctx.arc(ex, ey, 2.5, 0, Math.PI * 2); ctx.fill();
       });
-    }
-
-    function init() {
-      snake = [
-        { x: 15, y: 15 },
-        { x: 14, y: 15 },
-        { x: 13, y: 15 },
-      ];
-      dir = { x: 1, y: 0 };
-      nextDir = { x: 1, y: 0 };
-      score = 0;
-      gameOver = false;
-      scoreEl.textContent = '0';
-      spawnFood();
-      clearInterval(loop);
-      loop = setInterval(tick, TICK);
-      startBgLoop();
-    }
-
-    function spawnFood() {
-      let pos;
-      do {
-        pos = {
-          x: Math.floor(Math.random() * COLS),
-          y: Math.floor(Math.random() * ROWS),
-        };
-      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
-      food = pos;
-    }
-
-    function tick() {
-      dir = nextDir;
-
-      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-
-      // Wall collision
-      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
-        endGame(); return;
-      }
-      // Self collision
-      if (snake.some(s => s.x === head.x && s.y === head.y)) {
-        endGame(); return;
-      }
-
-      snake.unshift(head);
-
-      if (head.x === food.x && head.y === food.y) {
-        score += 10;
-        scoreEl.textContent = score;
-        spawnFood();
-      } else {
-        snake.pop();
-      }
-
-      draw();
-    }
-
-    function draw() {
-      drawBackground();
-      drawGrid();
-      drawGameObjects();
     }
 
     function getEyePositions(hx, hy, d, o) {
       const cx = hx + CELL / 2, cy = hy + CELL / 2;
-      if (d.x === 1)  return [[cx + 4, cy - o], [cx + 4, cy + o]];
+      if (d.x ===  1) return [[cx + 4, cy - o], [cx + 4, cy + o]];
       if (d.x === -1) return [[cx - 4, cy - o], [cx - 4, cy + o]];
       if (d.y === -1) return [[cx - o, cy - 4], [cx + o, cy - 4]];
       return                  [[cx - o, cy + 4], [cx + o, cy + 4]];
     }
 
-    function endGame() {
-      clearInterval(loop);
+    function draw() { drawBackground(); drawGrid(); drawGameObjects(); }
+
+    async function endGame() {
+      clearInterval(gameLoop);
       cancelAnimationFrame(bgRaf);
       gameOver = true;
       draw();
 
+      await submitScore(score);
+
       // Overlay
-      ctx.fillStyle = 'rgba(0,0,0,0.72)';
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 36px system-ui';
+      ctx.font      = 'bold 36px system-ui';
       ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2 - 50);
 
-      ctx.font = '20px system-ui';
-      ctx.fillStyle = '#aaa';
+      ctx.font = '20px system-ui'; ctx.fillStyle = '#aaa';
       ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 - 10);
 
-      // Play Again button
-      const bw = 160, bh = 44, bx = canvas.width / 2 - bw / 2, by = canvas.height / 2 + 20;
-      ctx.fillStyle = '#39ff14';
-      ctx.shadowColor = '#39ff14';
-      ctx.shadowBlur = 18;
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bw, bh, 8);
-      ctx.fill();
+      const bw = 160, bh = 44,
+            bx = canvas.width  / 2 - bw / 2,
+            by = canvas.height / 2 + 20;
+
+      ctx.fillStyle = '#39ff14'; ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8); ctx.fill();
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = '#111';
-      ctx.font = 'bold 17px system-ui';
+      ctx.fillStyle = '#111'; ctx.font = 'bold 17px system-ui';
       ctx.fillText('Play Again', canvas.width / 2, by + bh / 2 + 6);
 
-      // Store button bounds for click
       canvas._btn = { x: bx, y: by, w: bw, h: bh };
     }
 
-    // Input
+    // ── Input ─────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
-      const map = {
-        ArrowUp:    { x: 0,  y: -1 },
-        ArrowDown:  { x: 0,  y:  1 },
-        ArrowLeft:  { x: -1, y:  0 },
-        ArrowRight: { x: 1,  y:  0 },
-      };
+      const map = { ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0} };
       if (map[e.key]) {
         e.preventDefault();
         const d = map[e.key];
-        // Prevent reversing
         if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
       }
     });
@@ -308,12 +627,11 @@
       canvas.style.cursor = (mx >= x && mx <= x + w && my >= y && my <= y + h) ? 'pointer' : 'default';
     });
 
-    // Polyfill roundRect for older browsers
+    // ── roundRect polyfill ────────────────────────────────────
     if (!CanvasRenderingContext2D.prototype.roundRect) {
       CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
         this.beginPath();
-        this.moveTo(x + r, y);
-        this.lineTo(x + w - r, y);
+        this.moveTo(x + r, y); this.lineTo(x + w - r, y);
         this.quadraticCurveTo(x + w, y, x + w, y + r);
         this.lineTo(x + w, y + h - r);
         this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
@@ -325,7 +643,8 @@
       };
     }
 
-    init();
+    // ── Boot ──────────────────────────────────────────────────
+    bootAuth();
   </script>
 </body>
 </html>
