@@ -684,7 +684,7 @@
     function showGame() {
       authModal.classList.add('hidden');
       document.getElementById('username-display').textContent = currentUser.username;
-      if (currentUser.id) fetchLeaderboard();
+      if (currentUser.id) fetchLeaderboard('solo');
       else document.getElementById('leaderboard-list').innerHTML = '<li id="lb-status">Sign in to view</li>';
       showMpEntry();
     }
@@ -714,14 +714,24 @@
     });
 
     // ── Leaderboard ───────────────────────────────────────────
-    async function fetchLeaderboard() {
+    function getGameMode() {
+      if (multiplayerMode) return 'multiplayer';
+      if (partyMode)       return 'party';
+      return 'solo';
+    }
+
+    async function fetchLeaderboard(mode) {
+      mode = mode || getGameMode();
       const list = document.getElementById('leaderboard-list');
+      const title = document.querySelector('#lb-panel h3');
+      if (title) title.textContent = { solo: 'Solo', multiplayer: 'Multiplayer', party: 'Party Mode' }[mode] + ' Leaderboard';
       if (!sb) { list.innerHTML = '<li id="lb-status">Sign in to view</li>'; return; }
       list.innerHTML = '<li id="lb-status">Loading…</li>';
 
       const { data, error } = await sb
         .from('leaderboard')
-        .select('username, best_score');
+        .select('username, best_score')
+        .eq('mode', mode);
 
       list.innerHTML = '';
 
@@ -745,12 +755,14 @@
 
     async function submitScore(score) {
       if (!currentUser || !currentUser.id || !sb) return;
+      const mode = getGameMode();
       const { error } = await sb.from('scores').insert({
         user_id:  currentUser.id,
         username: currentUser.username,
         score,
+        mode,
       });
-      if (!error) await fetchLeaderboard();
+      if (!error) await fetchLeaderboard(mode);
     }
 
     function escHtml(str) {
@@ -835,6 +847,7 @@
     function startSolo() {
       multiplayerMode = false;
       partyMode = false;
+      fetchLeaderboard('solo');
       showCanvas();
       init();
     }
@@ -842,6 +855,7 @@
     function startParty() {
       multiplayerMode = false;
       partyMode = true;
+      fetchLeaderboard('party');
       showCanvas();
       init();
     }
@@ -901,6 +915,7 @@
       isHost = hosting;
       multiplayerMode = true;
       partyMode = false;
+      fetchLeaderboard('multiplayer');
       peers.clear();
       playerColors.clear();
       deadPlayers.clear();
