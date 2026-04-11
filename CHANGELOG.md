@@ -1,5 +1,13 @@
 # Changelog
 
+## Per-Mode Leaderboards
+
+Each game mode now has its own isolated leaderboard. Scores are tagged with a `mode` field (`solo`, `multiplayer`, `party`) and filtered accordingly. The leaderboard panel title updates dynamically when entering a mode.
+
+**Database migration required:** `supabase/migrations/20260411_add_mode_to_scores.sql`
+
+---
+
 ## Solo Enhancement Fork
 
 All changes are isolated to solo mode. Multiplayer is untouched.
