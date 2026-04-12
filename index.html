@@ -583,7 +583,7 @@
         </div>
       </div>
 
-      <div id="hint" style="display:none">Arrow keys to move</div>
+      <div id="hint" style="display:none">Arrow keys or WASD to move</div>
     </div>
     <div id="lb-panel">
       <h3>Leaderboard</h3>
@@ -1096,7 +1096,11 @@
       ArrowUp:    { x: 0,  y: -1 },
       ArrowDown:  { x: 0,  y: 1 },
       ArrowLeft:  { x: -1, y: 0 },
-      ArrowRight: { x: 1,  y: 0 }
+      ArrowRight: { x: 1,  y: 0 },
+      w:          { x: 0,  y: -1 },
+      s:          { x: 0,  y: 1 },
+      a:          { x: -1, y: 0 },
+      d:          { x: 1,  y: 0 }
     };
 
     let snake, dir, inputQueue, food, score, gameLoop, gameOver;
