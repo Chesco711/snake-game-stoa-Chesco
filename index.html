@@ -36,16 +36,9 @@
       z-index: 0;
     }
 
-    h1 {
-      font-size: 2.2rem;
-      line-height: 1.2;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #39ff14;
-      text-shadow: 0 0 12px #39ff1488;
-      margin-top: -12px;
-      margin-bottom: 24px;
-    }
+    /* ── Snake Title ── */
+    #snake-title { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 12px; }
+    #snake-title canvas { border: none; box-shadow: none; border-radius: 0; image-rendering: pixelated; }
 
     /* ── Auth Modal ── */
     #auth-modal {
@@ -982,7 +975,7 @@
     </div>
 
     <div id="game-col">
-      <h1>Snake</h1>
+      <div id="snake-title"></div>
       <div id="score-display" style="display:none">Score: <span id="score-val">0</span></div>
       <div id="level-display" style="display:none">Level: <span id="level-val">1</span></div>
 
@@ -2575,6 +2568,44 @@
         this.closePath();
       };
     }
+
+    // ── Snake Pixel Title ─────────────────────────────────────
+    (function drawSnakeTitle() {
+      const LETTERS = {
+        S: ['01111','10000','10000','01110','00001','00001','11110'],
+        N: ['10001','11001','10101','10011','10001','10001','10001'],
+        A: ['01110','10001','10001','11111','10001','10001','10001'],
+        K: ['10001','10010','10100','11000','10100','10010','10001'],
+        E: ['11111','10000','10000','11110','10000','10000','11111'],
+      };
+      const COLORS = { S: '#39ff14', N: '#ff6b6b', A: '#4ecdc4', K: '#ffe66d', E: '#a78bfa' };
+      const CELL = 10, GAP = 2;
+      const W = 5 * CELL + 4 * GAP;
+      const H = 7 * CELL + 6 * GAP;
+      const container = document.getElementById('snake-title');
+
+      ['S','N','A','K','E'].forEach(letter => {
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const lctx = c.getContext('2d');
+        const color = COLORS[letter];
+        lctx.shadowColor = color;
+        lctx.shadowBlur  = 8;
+        lctx.fillStyle   = color;
+        LETTERS[letter].forEach((row, r) => {
+          [...row].forEach((bit, col) => {
+            if (bit === '1') {
+              const x = col * (CELL + GAP);
+              const y = r   * (CELL + GAP);
+              lctx.beginPath();
+              lctx.roundRect(x, y, CELL, CELL, 3);
+              lctx.fill();
+            }
+          });
+        });
+        container.appendChild(c);
+      });
+    })();
 
     // ── Boot ──────────────────────────────────────────────────
     bootAuth();
