@@ -3,11 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snake</title>
+  <title>Stoic Snake</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div id="splash-screen">
+
+      <div id="splash-logo">
+        <svg viewBox="0 0 220 376" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="splash-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <g class="splash-body-group">
+            <rect x="11"  y="323" width="42" height="42" rx="9" fill="#1e0f2c"/>
+            <rect x="63"  y="323" width="42" height="42" rx="9" fill="#28143b"/>
+            <rect x="115" y="323" width="42" height="42" rx="9" fill="#321949"/>
+            <rect x="167" y="323" width="42" height="42" rx="9" fill="#3c1e58"/>
+            <rect x="167" y="271" width="42" height="42" rx="9" fill="#462366"/>
+            <rect x="167" y="219" width="42" height="42" rx="9" fill="#4f2875"/>
+            <rect x="167" y="167" width="42" height="42" rx="9" fill="#592d83"/>
+            <rect x="115" y="167" width="42" height="42" rx="9" fill="#633292"/>
+            <rect x="63"  y="167" width="42" height="42" rx="9" fill="#6d37a0"/>
+            <rect x="11"  y="167" width="42" height="42" rx="9" fill="#773caf"/>
+            <rect x="11"  y="115" width="42" height="42" rx="9" fill="#8141bd"/>
+            <rect x="11"  y="63"  width="42" height="42" rx="9" fill="#8a46cc"/>
+            <rect x="11"  y="11"  width="42" height="42" rx="9" fill="#944bda"/>
+            <rect x="63"  y="11"  width="42" height="42" rx="9" fill="#9e50e9"/>
+            <rect x="115" y="11"  width="42" height="42" rx="9" fill="#a855f7"/>
+          </g>
+          <g class="splash-head-group" filter="url(#splash-glow)">
+            <rect x="167" y="11" width="42" height="42" rx="9" fill="#eb77ff"/>
+            <circle cx="180" cy="24" r="4.5" fill="#0d1117"/>
+            <circle cx="180" cy="42" r="4.5" fill="#0d1117"/>
+          </g>
+        </svg>
+      </div>
+
+      <div id="splash-title-wrap">
+        <div id="splash-title-text">
+          <span class="s-stoic">STOIC</span><span class="s-snake">SNAKE</span>
+        </div>
+        <div id="splash-tagline">
+          STAY CALM<span>.</span>&nbsp; MOVE<span>.</span>&nbsp; GROW<span>.</span>
+        </div>
+      </div>
+
+      <button id="splash-play" onclick="startChompAnimation()">&#9654;&nbsp;&nbsp;PLAY</button>
+
+    </div>
+  </div>
 
   <!-- Auth Modal -->
   <div id="auth-modal">
@@ -174,6 +226,7 @@
   <script src="multiplayer-session.js"></script>
   <script src="multiplayer-lobby.js"></script>
   <script src="menu-background-snake.js"></script>
+  <script src="splash.js"></script>
   <script>bootAuth();</script>
 </body>
 </html>
